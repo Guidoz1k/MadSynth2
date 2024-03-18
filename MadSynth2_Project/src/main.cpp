@@ -1,15 +1,14 @@
 #include <Arduino.h>
 
-#define PINLED 24
+#define TESTPIN 24
 
 IntervalTimer timer;
 
-// Define the interval for the timer interrupt in microseconds
-const unsigned long timerInterval = 1000000; // 1 second
+const unsigned long timerInterval = 250000;
 
 // Timer interrupt service routine (ISR)
 void timerInterruptHandler(){
-	static int status = 0;
+	static int8_t status = 0;
 
 	if(status == 1){
 		status = 0;
@@ -19,26 +18,23 @@ void timerInterruptHandler(){
 		status = 1;
 		digitalWriteFast(LED_BUILTIN, LOW);
 	}
-	Serial.println("INTERRUPT");
+	
 }
 
 void setup(){
-	pinMode(PINLED, OUTPUT);
+	pinMode(TESTPIN, INPUT);
 	pinMode(LED_BUILTIN, OUTPUT);
 
 	Serial.begin(115200);
 
 	timer.begin(timerInterruptHandler, timerInterval);
+	delay(2000);
 	Serial.println("SETUP COMPLETE");
 }
 
 void loop(){
-	/*
-	digitalWriteFast(PINLED, HIGH);
-	digitalWriteFast(LED_BUILTIN, LOW);
-	delay(1000);
-	digitalWriteFast(PINLED, LOW);
-	digitalWriteFast(LED_BUILTIN, HIGH);
-	delay(1000);
-	*/
+	if(digitalReadFast(TESTPIN) == HIGH){
+		Serial.println("BUTTON");
+		delay(1000);
+	}
 }
