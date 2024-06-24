@@ -1,35 +1,37 @@
-#include "main.h"
-
-// Timer interrupt service routine (ISR)
-void timerInterrupt(){
-    static bool state = false;
-
-    if(state == true){
-        digitalWriteFast(LED_BUILTIN, LOW);
-        digitalWriteFast(TESTPIN, HIGH);
-        state = false;
-    }
-    else{
-        digitalWriteFast(LED_BUILTIN, HIGH);
-        digitalWriteFast(TESTPIN, LOW);
-        state = true;
-
-    }
-}
+#include <Arduino.h>
+#include "pcm.h"
 
 void setup(){
-    pinMode(TESTPIN, OUTPUT);
 	pinMode(LED_BUILTIN, OUTPUT);
-
-	//Serial.begin(115200);
-
-	timer.begin(timerInterrupt, 250000);
-	//delay(2000);
-	//Serial.println("SETUP COMPLETE");
-
     i2s_setup();
 }
 
 void loop(){
-    delay(1000);
+    uint16_t i = 0;
+
+    for(i = 20; i < 2000; i++){
+        frequency(i);
+        delay(2);
+    }
+    for(i = 2000; i > 20; i--){
+        frequency(i);
+        delay(2);
+    }
 }
+
+/*
+void loop(){
+    static bool state = false;
+    
+    if(state == true){
+        digitalWriteFast(LED_BUILTIN, LOW);
+        state = false;
+    }
+    else{
+        digitalWriteFast(LED_BUILTIN, HIGH);
+        state = true;
+    }
+
+    delay(250);
+}
+*/
