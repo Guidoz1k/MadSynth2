@@ -1,9 +1,15 @@
 #include <Arduino.h>
 #include "pcm.h"
+#include "serial.h"
+#include "keys.h"
 
 void setup(){
 	pinMode(LED_BUILTIN, OUTPUT);
-    i2s_setup();
+    uarts_setup();
+    pcm_setup();
+
+    set_DDSfrequency(7980);
+    set_DDSwaveform(SINE,SAW);
 }
 
 void loop(){

@@ -14,7 +14,7 @@ int main(){
 	int32_t integer = 0;
 	float temp_number = 0;
 
-	int32_t option = 4; // 1 = sine, 1 = square, 2 = sawtooth (phased), 3 = triangle
+	int32_t option = 2; // 1 = sine, 1 = square, 2 = sawtooth (phased), 3 = triangle
 						// 4 = inverted sawtooth (phased), 5 = sawtooth, 6 = inverted sawtooth 
 
 	for(counter = 0; counter < SIZE; counter++){
@@ -52,6 +52,7 @@ int main(){
 				integer = - counter * (float)((float)(MAX - 1) / (float)(SIZE - 1));
 				if(counter >= (SIZE/2))
 					integer += MAX;
+				break;
 			case 5:
 				integer = - (MAX / 2) + counter * (float)((float)(MAX - 1) / (float)(SIZE - 1));
 				break;
