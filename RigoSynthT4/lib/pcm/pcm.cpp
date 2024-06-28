@@ -4,17 +4,16 @@
 #include <Audio.h>
 #include <utility/imxrt_hw.h> // for the I²S frequency change
 
-// LUT collection
-#include "lut.h"
-
-#define SAMPLERATE 192000
+#include "umidi.h"
+#include "synth_dds.h"
 
 // =============================================== variables ===============================================
 
 // interrupt variables
 IntervalTimer timer;
-synth_mode_t int_mode = DDS;
+synth_mode_t int_mode = SYNTH_DDS;
 uint32_t interrupt_counter = 0; // incremented every subdivision of the 10ms total interrupt time. Right now, 1ms
+float32_t volume = 0.5;
 
 // audio api variables
 AudioPlayQueue           leftqueue;
@@ -23,13 +22,11 @@ AudioOutputI2S           i2s1;
 AudioConnection          patchCord2(rightqueue, 0, i2s1, 0);
 AudioConnection          patchCord1(leftqueue, 0, i2s1, 1);
 
-// synth variables
-float32_t volume = 0.5;
-
-// dds variables
-uint32_t increment = 0;
-int16_t *waveform_pointer_r = lut_sin;
-int16_t *waveform_pointer_l = lut_sin;
+// MIDI controller
+uint16_t midi_pitch_wheel = 0;
+uint8_t midi_mod_wheel = 0;
+uint8_t midi_faders[9] = {0};
+uint8_t midi_knobs[9] = {0};
 
 /* =============================================== INTERRUPT ===============================================
     Timer ISR should add 441 positions on each queue every 10ms, for 44.1kHz
@@ -39,38 +36,91 @@ int16_t *waveform_pointer_l = lut_sin;
     As it is 10 subdivisions on a 10ms period, subdivisions will occur every 1ms.
 */
 
-void DDS_mode(uint8_t sample_size, int16_t *r_channel, int16_t *l_channel){
-    uint8_t i;
-    static uint32_t dds_counter = 0;
+void parse_midi_DDS(void){
+    midi_input_t midi_in;
 
-    for(i = 0; i < sample_size; i++){
-        r_channel[i] = waveform_pointer_r[dds_counter >> 20];
-        l_channel[i] = waveform_pointer_l[dds_counter >> 20];
-        dds_counter += increment;
-        dds_counter &= 0x7FFFFFFF; // 0x07FF but for the <<20
+    midi_in = uart_midi();
+    
+    switch(midi_in.midi_command){
+    case MIDI_ID_KEYON:
+        volume = 1.0;
+        set_DDSoscillator(midi_in.firstbyte);
+        break;
+    case MIDI_ID_KEYOFF:
+        clear_DDSoscillator(midi_in.firstbyte);
+        break;
+    case MIDI_ID_PITCHWHEEL:
+        midi_pitch_wheel = midi_in.firstbyte + 256 * midi_in.secondbyte;
+        break;
+    case MIDI_ID_MODWHEEL:
+        midi_mod_wheel = midi_in.secondbyte;
+        break;
+    case MIDI_ID_KNOB:
+        midi_knobs[midi_in.firstbyte] = midi_in.secondbyte;
+        break;
+    case MIDI_ID_FADER:
+        midi_faders[midi_in.firstbyte] = midi_in.secondbyte;
+        break;
+    case MIDI_ID_UPPERPAD:
+        /*
+        switch(midi_in.firstbyte){
+        case 0:
+            set_DDSwaveform(WAVE_NONE, WAVE_SINE);
+            break;
+        case 1:
+            set_DDSwaveform(WAVE_NONE, WAVE_TRIANG);
+            break;
+        case 2:
+            set_DDSwaveform(WAVE_NONE, WAVE_SQUARE);
+            break;
+        case 3:
+            set_DDSwaveform(WAVE_NONE, WAVE_SAW);
+            break;
+        }
+        */
+        break;
+    case MIDI_ID_LOWERPAD:
+        /*
+        switch(midi_in.firstbyte){
+        case 0:
+            set_DDSwaveform(WAVE_SINE, WAVE_NONE);
+            break;
+        case 1:
+            set_DDSwaveform(WAVE_TRIANG, WAVE_NONE);
+            break;
+        case 2:
+            set_DDSwaveform(WAVE_SQUARE, WAVE_NONE);
+            break;
+        case 3:
+            set_DDSwaveform(WAVE_SAW, WAVE_NONE);
+            break;
+        }
+        */
+        break;
+    default:
+        break;
     }
-}
-
-void PHYS_STRING_mode(uint8_t sample_size, int16_t *right_channel, int16_t *left_channel){
 
 }
 
 void timer_interrupt(){
-    int16_t buffer_r[192];
-    int16_t buffer_l[192];
+    int16_t buffer_r[192] = {0};
+    int16_t buffer_l[192] = {0};
 
     // external monitoring for interrupt processing time
     digitalWriteFast(INTPIN, HIGH);
 
-    interrupt_counter++; // a 1ms counter for the system
+    interrupt_counter++;    // a 1ms counter for the system
 
     // different synthesis modes are switched here
     switch(int_mode){
-    case DDS:
+    case SYNTH_DDS:
         DDS_mode(192, buffer_r, buffer_l);
+        parse_midi_DDS();           // reads MIDI inputs
         break;
-    case PHYS_STRING:
-        PHYS_STRING_mode(192, buffer_r, buffer_l);
+    case SYNTH_PHYS_STRING:
+        // PHYS_STRING_mode(192, buffer_r, buffer_l);
+        // parse_midi_SYNTH_PHYS_STRING();           // reads MIDI inputs
         break;
     default:
         break;
@@ -86,58 +136,12 @@ void timer_interrupt(){
 
 // =============================================== functions ===============================================
 
-uint32_t return_dds_time(void){
+uint32_t return_int_time(void){
     return interrupt_counter;
 }
 
 void set_volume(float32_t vol){
     volume = vol;
-}
-
-void set_DDSfrequency(float32_t freq){ // provisory
-    increment = (uint32_t)((freq * 1024 * 1024) * ((float32_t)LUTSIZE/(float32_t)SAMPLERATE)); // *1024 because is the equivalent of << 20 on the interrupt
-}
-
-void set_DDSwaveform(waveform_t waveform_r, waveform_t waveform_l){
-    switch(waveform_r){
-    case SINE:
-        waveform_pointer_r = lut_sin;
-        break;
-    case SQUARE:
-        waveform_pointer_r = lut_squ;
-        break;
-    case TRIANG:
-        waveform_pointer_r = lut_tri;
-        break;
-    case SAW:
-        waveform_pointer_r = lut_saw;
-        break;
-    case INV_SAW:
-        waveform_pointer_r = lut_inv;
-        break;
-    default:
-        break;
-    }
-    switch(waveform_l){
-    case SINE:
-        waveform_pointer_l = lut_sin;
-        break;
-    case SQUARE:
-        waveform_pointer_l = lut_squ;
-        break;
-    case TRIANG:
-        waveform_pointer_l = lut_tri;
-        break;
-    case SAW:
-        waveform_pointer_l = lut_saw;
-        break;
-    case INV_SAW:
-        waveform_pointer_l = lut_inv;
-        break;
-    default:
-        break;
-    }
-
 }
 
 // https://forum.pjrc.com/index.php?threads/change-sample-rate-for-teensy-4-vs-teensy-3.57283/
@@ -159,6 +163,6 @@ void pcm_setup(void){
     pinMode(INTPIN, OUTPUT);
 	AudioMemory(64);
     timer.begin(timer_interrupt, 1000); // 1000µs = 1ms tick rate for the interrupt
-    setI2SFreq(SAMPLERATE); // sample rate = 192kHz
+    setI2SFreq(192000); // sample rate = 192kHz
 }
 

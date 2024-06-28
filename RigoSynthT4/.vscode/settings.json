@@ -2,6 +2,7 @@
     "files.associations": {
         "i2s.h": "c",
         "arduino.h": "c",
-        "output_i2s.h": "c"
+        "output_i2s.h": "c",
+        "*.tcc": "cpp"
     }
 }

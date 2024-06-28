@@ -69,12 +69,14 @@ main(){
 
 */
 
-#ifndef __LUT_H
-#define __LUT_H
+#ifndef __KEYS_H
+#define __KEYS_H
 
 #include <stdint.h>
 
-float key_frequencies[132] ={ // 11 octaves of 12 keys
+#define MAXKEYS	132
+
+float key_frequencies[MAXKEYS] ={ // 11 octaves of 12 keys
 //  C           C#          D           D#          E           F           F#          G           G#          A           A#          B
     0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          // C-2 ~ B-2
     0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          0,          // C-1 ~ B-1
@@ -89,7 +91,7 @@ float key_frequencies[132] ={ // 11 octaves of 12 keys
     4186.009,   4434.922,   4698.636,   4978.032,   5274.041,   5587.652,   5919.911,   6271.927,   6644.875,   7040.000,   7458.620,   7902.133,   // C8 ~ B8
 };
 
-char key_chars[132][5] ={ // 11 octaves of 12 keys
+char key_chars[MAXKEYS][5] ={ // 11 octaves of 12 keys
 //    C      C#       D      D        E       F      F#       G      G#       A      A#       B
     " C-2", "C#-2", " D-2", "D#-2", " E-2", " F-2", "F#-2", " G-2", "G#-2", " A-2", "A#-2", " B-2",      // C-2 ~ B-2
     " C-1", "C#-1", " D-1", "D#-1", " E-1", " F-1", "F#-1", " G-1", "G#-1", " A-1", "A#-1", " B-1",      // C-1 ~ B-1
@@ -119,4 +121,4 @@ typedef enum {
     C_8  = 120, CS_8  = 121, D_8  = 122, DS_8  = 123, E_8  = 124, F_8  = 125, FS_8  = 126, G_8  = 127, GS_8  = 128, A_8  = 129, AS_8  = 130, B_8  = 131,    // C8 ~ B8
 } piano_keys_t;
 
-#endif /* __LUT_H */
+#endif /* __KEYS_H */

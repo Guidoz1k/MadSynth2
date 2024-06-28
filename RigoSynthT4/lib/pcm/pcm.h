@@ -12,30 +12,18 @@
 #define WCLK    20
 #define DOUT    7
 
-// variables
+// types
 
 typedef enum {
-    DDS         = 0,
-    PHYS_STRING = 1,
+    SYNTH_DDS         = 0,
+    SYNTH_PHYS_STRING = 1,
 } synth_mode_t;
-
-typedef enum {
-    SINE    = 0,
-    SQUARE  = 1,
-    TRIANG  = 2,
-    SAW     = 3,
-    INV_SAW = 4,
-} waveform_t;
 
 // functions
 
-uint32_t return_dds_time(void);
+uint32_t return_int_time(void);
 
 void pcm_setup(void);
-
-void set_DDSfrequency(float32_t freq);
-
-void set_DDSwaveform(waveform_t waveform_r, waveform_t waveform_l);
 
 void set_volume(float32_t vol);
 

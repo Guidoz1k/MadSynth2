@@ -1,15 +1,13 @@
 #include <Arduino.h>
 #include "pcm.h"
 #include "serial.h"
-#include "keys.h"
+#include "umidi.h"
 
 void setup(){
 	pinMode(LED_BUILTIN, OUTPUT);
     uarts_setup();
     pcm_setup();
-
-    set_DDSfrequency(7980);
-    set_DDSwaveform(SINE,SAW);
+    uart_midi_setup();
 }
 
 void loop(){
@@ -24,5 +22,5 @@ void loop(){
         state = true;
     }
 
-    delay(250);
+    delay(100);
 }
