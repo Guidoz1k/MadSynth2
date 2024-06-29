@@ -164,5 +164,7 @@ void pcm_setup(void){
 	AudioMemory(64);
     timer.begin(timer_interrupt, 1000); // 1000µs = 1ms tick rate for the interrupt
     setI2SFreq(192000); // sample rate = 192kHz
+
+    DDS_setup();
 }
 

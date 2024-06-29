@@ -15,10 +15,18 @@ typedef enum {
 
 void DDS_mode(uint8_t sample_size, int16_t *r_channel, int16_t *l_channel);
 
-void set_DDSwaveform(waveform_t waveform_r, waveform_t waveform_l);
+void set_DDSwaveform_r(waveform_t waveform_r);
+
+void set_DDSwaveform_l(waveform_t waveform_l);
+
+void set_DDSharmonics_r(uint8_t harm_r);
+
+void set_DDSharmonics_l(uint8_t harm_l);
 
 void set_DDSoscillator(uint8_t key);
 
 void clear_DDSoscillator(uint8_t key);
+
+void DDS_setup(void);
 
 #endif /* __SYNTH_DDS_H */
