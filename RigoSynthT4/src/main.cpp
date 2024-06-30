@@ -12,7 +12,7 @@ void setup(){
 
 void loop(){
     static bool state = false;
-    
+
     if(state == true){
         digitalWriteFast(LED_BUILTIN, LOW);
         state = false;

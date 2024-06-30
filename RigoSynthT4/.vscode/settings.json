@@ -3,6 +3,8 @@
         "i2s.h": "c",
         "arduino.h": "c",
         "output_i2s.h": "c",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "chrono": "cpp",
+        "algorithm": "cpp"
     }
 }

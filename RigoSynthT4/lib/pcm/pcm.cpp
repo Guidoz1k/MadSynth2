@@ -6,6 +6,15 @@
 
 #include "umidi.h"
 #include "synth_dds.h"
+#include "serial.h"
+
+// config MACROS
+#define SAMPLERATE      96000   // sample rate
+#define SAMPLETIMES     4       // times per second it updates the I²S
+
+// resulting MACROS
+#define UPDATEMICRO     (1000 / SAMPLETIMES)                    // period with which the I²S interrupts
+#define UPDATESAMPLE    SAMPLERATE / (1000000 / UPDATEMICRO)    // number of samples updated each update period
 
 // =============================================== variables ===============================================
 
@@ -29,11 +38,8 @@ uint8_t midi_faders[9] = {0};
 uint8_t midi_knobs[9] = {0};
 
 /* =============================================== INTERRUPT ===============================================
-    Timer ISR should add 441 positions on each queue every 10ms, for 44.1kHz
-    By filling 440 positions in subdivisions and adding 1 extra in the last one, it is
-    possible to use smaller interrupt periods. Right now it is doing 10 subdivisions,
-    loading 44 samples to the I²S bus in the first 9 and 45 samples in the last one.
-    As it is 10 subdivisions on a 10ms period, subdivisions will occur every 1ms.
+    Timer ISR should add 192 every ms. As the interrupt can't run for more than 600µs,
+    the interrupt runs every 250µs and adds 48 positions to the buffer each time.
 */
 
 void parse_midi_DDS(void){
@@ -44,10 +50,10 @@ void parse_midi_DDS(void){
     switch(midi_in.midi_command){
     case MIDI_ID_KEYON:
         volume = 1.0;
-        set_DDSoscillator(midi_in.firstbyte);
+        start_DDSoscillator(midi_in.firstbyte);
         break;
     case MIDI_ID_KEYOFF:
-        clear_DDSoscillator(midi_in.firstbyte);
+        stop_DDSoscillator(midi_in.firstbyte);
         break;
     case MIDI_ID_PITCHWHEEL:
         midi_pitch_wheel = midi_in.firstbyte + 256 * midi_in.secondbyte;
@@ -104,18 +110,24 @@ void parse_midi_DDS(void){
 }
 
 void timer_interrupt(){
-    int16_t buffer_r[192] = {0};
-    int16_t buffer_l[192] = {0};
+    int16_t buffer_r[UPDATESAMPLE] = {0};
+    int16_t buffer_l[UPDATESAMPLE] = {0};
+    uint8_t milli_fraction = 0;
 
     // external monitoring for interrupt processing time
     digitalWriteFast(INTPIN, HIGH);
 
-    interrupt_counter++;    // a 1ms counter for the system
+    if(milli_fraction == (SAMPLETIMES - 1)){
+        interrupt_counter++;    // a 1ms counter for the system
+        milli_fraction = 0;
+    }
+    else
+        milli_fraction++;
 
     // different synthesis modes are switched here
     switch(int_mode){
     case SYNTH_DDS:
-        DDS_mode(192, buffer_r, buffer_l);
+        DDS_mode(UPDATESAMPLE, buffer_r, buffer_l);
         parse_midi_DDS();           // reads MIDI inputs
         break;
     case SYNTH_PHYS_STRING:
@@ -127,8 +139,8 @@ void timer_interrupt(){
     }
 
     // load buffers in the I²S peripheral
-    leftqueue.play(buffer_l, 192);
-    rightqueue.play(buffer_r, 192);
+    leftqueue.play(buffer_l, UPDATESAMPLE);
+    rightqueue.play(buffer_r, UPDATESAMPLE);
 
     // external monitoring for interrupt processing time
     digitalWriteFast(INTPIN, LOW);
@@ -162,8 +174,9 @@ void setI2SFreq(int freq) {
 void pcm_setup(void){
     pinMode(INTPIN, OUTPUT);
 	AudioMemory(64);
-    timer.begin(timer_interrupt, 1000); // 1000µs = 1ms tick rate for the interrupt
-    setI2SFreq(192000); // sample rate = 192kHz
+    timer.priority(0);
+    timer.begin(timer_interrupt, UPDATEMICRO);   // 250µs = 0.25ms tick rate for the interrupt (interrupts can't run for more than 600µs)
+    setI2SFreq(SAMPLERATE); // sample rate = 192kHz
 
     DDS_setup();
 }

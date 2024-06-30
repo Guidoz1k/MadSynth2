@@ -23,9 +23,9 @@ void set_DDSharmonics_r(uint8_t harm_r);
 
 void set_DDSharmonics_l(uint8_t harm_l);
 
-void set_DDSoscillator(uint8_t key);
+void start_DDSoscillator(uint8_t key);
 
-void clear_DDSoscillator(uint8_t key);
+void stop_DDSoscillator(uint8_t key);
 
 void DDS_setup(void);
 

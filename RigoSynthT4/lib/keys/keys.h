@@ -75,6 +75,7 @@ main(){
 #include <stdint.h>
 
 #define MAXKEYS	132
+#define FIRSTKEY 24
 
 float key_frequencies[MAXKEYS] ={ // 11 octaves of 12 keys
 //  C           C#          D           D#          E           F           F#          G           G#          A           A#          B
