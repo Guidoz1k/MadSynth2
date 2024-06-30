@@ -23,10 +23,10 @@ uint_fast32_t adsr_output[MAXALLOC] = {0};
 
 // times in ms
 uint_fast32_t attack_time = 0xFFFF;
-uint_fast32_t decay_time = 0xFFFF;
+uint_fast32_t decay_time = 0x7FFF;
 //uint_fast16_t sustain_time = 1;
-uint_fast32_t sustain_level = 0x7FFFFFFF;
-uint_fast32_t release_time = 0xFFFF;
+uint_fast32_t sustain_level = 0xCFFFFFFF;
+uint_fast32_t release_time = 0x7FFF;
 
 uint_fast8_t ADSR_channels_counter = 0;
 
